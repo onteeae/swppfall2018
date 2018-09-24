@@ -8,7 +8,6 @@
 
 # Modified by Sanha Lee at SNU Software Platform Lab for
 # SWPP fall 2018 lecture.
-
 import os
 import sys
 import re
@@ -38,10 +37,17 @@ class BabynameFileNotFoundException(Exception):
     """
     A custom exception for the cases that the babyname file does not exist.
     """
-    pass
+pass
 
 
 def check_filename_existence(func):
+    def wrapper(*args, **kwargs):
+        filename = args[1]
+        if os.path.exists(filename) is False:
+            raise BabynameFileNotFoundException("No such babyname file or directory: {0}".format(filename))
+        else:
+            func(*args,**kwargs)
+    return wrapper
     """
     A decorator that catches the non-exiting filename argument and raises a custom `BabynameFileNotFoundException`.
 
@@ -68,7 +74,7 @@ class BabynameParser:
 
         text = "File is not read yet"  # TODO: Open and read the given file.
         # Could process the file line-by-line, but regex on the whole text at once is even easier.
-
+        text = open(filename).read()
         # The year extracting code is provided. Implement the tuple extracting code by using this.
         year_match = re.search(r'Popularity\sin\s(\d{4})', text)
         if not year_match:
@@ -79,9 +85,13 @@ class BabynameParser:
 
         # Extract all the data tuples with a findall()
         # each tuple is: (rank, male-name, female-name)
-        self.rank_to_names_tuples = []  # TODO: Extract the list of rank to names tuples.
+        self.rank_to_names_tuples = re.findall(r'<tr align="right"><td>(\d+)</td><td>(.+)</td><td>(.+)</td>',text)
 
     def parse(self, parsing_lambda):
+        list = []
+        for tup in self.rank_to_names_tuples:
+            list.append(parsing_lambda(tup))
+        return list
         """
         Collects a list of babynames parsed from the (rank, male-name, female-name) tuples.
         The list must contains all results processed with the given lambda.
